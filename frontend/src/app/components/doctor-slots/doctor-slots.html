@@ -1,0 +1,26 @@
+<h2>Dostępne terminy - Dr {{ doctor?.firstName }} {{ doctor?.lastName }}</h2>
+<p style="padding:0 24px">Specjalizacja: {{ doctor?.specialization }}</p>
+
+<div class="slots">
+  @for (slot of slots; track slot.id) {
+    <mat-card [style.opacity]="slot.status !== 'AVAILABLE' ? '0.6' : '1'">
+      <mat-card-content>
+        <p><strong>Data:</strong> {{ slot.startTime | date:'dd.MM.yyyy' }}</p>
+        <p><strong>Godzina:</strong> {{ slot.startTime | date:'HH:mm' }} - {{ slot.endTime | date:'HH:mm' }}</p>
+        <mat-chip [color]="getStatusColor(slot.status)" highlighted>
+          {{ getStatusLabel(slot.status) }}
+        </mat-chip>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-raised-button color="primary"
+                [disabled]="slot.status !== 'AVAILABLE'"
+                (click)="book(slot)">
+          Zarezerwuj
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  }
+  @empty {
+    <p>Brak dostępnych terminów.</p>
+  }
+</div>

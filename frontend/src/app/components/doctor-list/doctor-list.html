@@ -1,0 +1,29 @@
+<h2>Lista lekarzy</h2>
+@if (loading) {
+  <mat-spinner></mat-spinner>
+}
+<div class="grid">
+  @for (doctor of doctors; track doctor.id) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Dr {{ doctor.firstName }} {{ doctor.lastName }}</mat-card-title>
+        <mat-card-subtitle>{{ doctor.specialization }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>Tel: {{ doctor.phoneNumber }}</p>
+      </mat-card-content>
+      @if (auth.currentRole() === 'PATIENT') {
+        <mat-card-actions>
+          <button mat-raised-button color="primary" [routerLink]="['/doctors', doctor.id, 'slots']">
+            Umów wizytę
+          </button>
+        </mat-card-actions>
+      }
+    </mat-card>
+  }
+  @empty {
+    @if (!loading) {
+      <p>Brak lekarzy w systemie.</p>
+    }
+  }
+</div>

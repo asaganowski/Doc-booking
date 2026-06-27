@@ -1,0 +1,15 @@
+<mat-toolbar color="primary">
+  <span>DocBooking</span>
+  <span class="spacer"></span>
+  @if (auth.isLoggedIn()) { @if (auth.currentRole() === 'PATIENT') {
+  <button mat-button routerLink="/doctors">Lekarze</button>
+  <button mat-button routerLink="/my-appointments">Moje wizyty</button>
+  } @if (auth.currentRole() === 'DOCTOR') {
+  <button mat-button routerLink="/doctor-panel">Panel lekarza</button>
+  }
+  <button mat-button (click)="auth.logout()">Wyloguj ({{ auth.currentUsername() }})</button>
+  } @else {
+  <button mat-button routerLink="/login">Logowanie</button>
+  <button mat-button routerLink="/register">Rejestracja</button>
+  }
+</mat-toolbar>

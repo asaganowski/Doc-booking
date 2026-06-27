@@ -1,0 +1,686 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+
+\usetikzlibrary{shapes, shapes.geometric, arrows.meta, positioning, fit, backgrounds, calc}
+
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{System Rezerwacji Terminów Lekarskich}
+\lhead{ZTI -- Projekt}
+\rfoot{\thepage}
+
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codegreen}{rgb}{0,0.5,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codeblue}{rgb}{0,0,0.7}
+\definecolor{codepurple}{rgb}{0.5,0,0.5}
+
+\lstdefinestyle{java}{
+  backgroundcolor=\color{codebg},
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{codeblue}\bfseries,
+  stringstyle=\color{codepurple},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  keepspaces=true,
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  showstringspaces=false,
+  tabsize=2,
+  language=Java,
+  frame=single,
+  rulecolor=\color{gray!30}
+}
+
+\lstdefinestyle{bash}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{gray!30},
+  numbers=none
+}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+% --- tikz styles ---
+\tikzset{
+  classbox/.style={rectangle, draw=black, thick, fill=blue!8,
+    minimum width=4cm, minimum height=0.7cm, align=center, font=\small},
+  classattr/.style={rectangle, draw=black, fill=white,
+    minimum width=4cm, align=left, font=\footnotesize, inner sep=4pt},
+  actor/.style={font=\small, align=center},
+  usecase/.style={ellipse, draw, fill=yellow!20, align=center, font=\footnotesize,
+    minimum width=2.8cm, minimum height=0.8cm},
+  seqbox/.style={rectangle, draw, fill=blue!15, minimum width=2cm,
+    minimum height=0.6cm, align=center, font=\footnotesize},
+  lifeline/.style={dashed, gray},
+  msgarr/.style={-Stealth, thick},
+  retarr/.style={-Stealth, dashed}
+}
+
+% ============================================================
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\LARGE\bfseries Zaawansowane Technologie Internetowe\par}
+  \vspace{0.5cm}
+  {\large Dokumentacja Projektu\par}
+  \vspace{2cm}
+  {\huge\bfseries System Rezerwacji Terminów Lekarskich\par}
+  \vspace{1cm}
+  {\large \textit{DocBooking}\par}
+  \vspace{3cm}
+  \begin{tabular}{ll}
+    \textbf{Autor:}       & Artur Saganowski \\[4pt]
+    \textbf{Technologie:} & Spring Boot 3.4, Angular 20, PostgreSQL \\[4pt]
+    \textbf{Data:}        & \today \\
+  \end{tabular}
+  \vfill
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Opis funkcjonalności aplikacji}
+
+\subsection{Cel systemu}
+
+\textbf{DocBooking} to aplikacja webowa klasy klient-serwer umożliwiająca pacjentom rezerwację wizyt lekarskich online. System zapewnia podgląd dostępnych terminów w czasie rzeczywistym dzięki technologii WebSocket, eliminując problem podwójnej rezerwacji tego samego slotu.
+
+\subsection{Funkcjonalności części serwerowej}
+
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{Zarządzanie użytkownikami} -- rejestracja pacjentów, logowanie, generowanie i walidacja tokenów JWT.
+  \item \textbf{Zarządzanie lekarzami} -- pobieranie listy lekarzy, filtrowanie po specjalizacji.
+  \item \textbf{Zarządzanie slotami} -- tworzenie slotów przez lekarza, pobieranie dostępnych terminów, zmiana statusu slotu (\texttt{AVAILABLE} / \texttt{BEING\_RESERVED} / \texttt{BOOKED}).
+  \item \textbf{Rezerwacja wizyt} -- tworzenie rezerwacji, anulowanie wizyty, historia wizyt pacjenta.
+  \item \textbf{WebSocket} -- rozgłaszanie zmian statusu slotów do wszystkich klientów przeglądających terminy tego samego lekarza.
+  \item \textbf{Spring AOP} -- automatyczne logowanie każdego wywołania serwisu (czas wykonania, użytkownik, błędy) oraz audit zdarzeń rezerwacji.
+  \item \textbf{Inicjalizacja danych} -- seedowanie bazy przy pierwszym uruchomieniu: 3 lekarzy z terminami na 5 dni roboczych.
+\end{enumerate}
+
+\subsection{Funkcjonalności klienta (Angular 20)}
+
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{Rejestracja i logowanie} -- formularze z walidacją, token JWT w \texttt{localStorage}.
+  \item \textbf{Lista lekarzy} -- karty Angular Material z danymi lekarza.
+  \item \textbf{Widok terminów} -- siatka slotów z live aktualizacją przez WebSocket.
+  \item \textbf{Rezerwacja} -- dwuetapowy proces: oznaczenie slotu jako „rezerwowany", następnie zapis wizyty.
+  \item \textbf{Historia wizyt} -- lista wizyt z możliwością anulowania.
+  \item \textbf{Guard i Interceptor} -- ochrona tras i automatyczne dołączanie tokenu JWT.
+\end{enumerate}
+
+% ============================================================
+\section{Architektura systemu}
+
+\subsection{Diagram komponentów}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=3.5cm]
+  \node[rectangle, draw, rounded corners, fill=blue!15, minimum width=3cm,
+        minimum height=1.2cm, align=center, font=\small] (fe)
+        {Angular 20\\Frontend\\:4200};
+  \node[rectangle, draw, rounded corners, fill=green!15, minimum width=3cm,
+        minimum height=1.2cm, align=center, font=\small, right=of fe] (be)
+        {Spring Boot\\Backend\\:8080};
+  \node[cylinder, shape border rotate=90, draw, fill=orange!20,
+        minimum width=2.5cm, minimum height=1.4cm, align=center,
+        font=\small, right=of be] (db) {PostgreSQL\\:5432};
+
+  \draw[-Stealth, thick] (fe) -- node[above, font=\footnotesize]{REST / WS} (be);
+  \draw[-Stealth, thick] (be) -- node[above, font=\footnotesize]{JPA} (db);
+  \draw[-Stealth, dashed, bend left=40] (be) to
+        node[above, font=\footnotesize]{STOMP} (fe);
+\end{tikzpicture}
+\caption{Diagram komponentów systemu DocBooking}
+\end{figure}
+
+\subsection{Stos technologiczny}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Warstwa} & \textbf{Technologia} & \textbf{Rola} \\
+\midrule
+Frontend  & Angular 20            & SPA, routing, formularze \\
+UI        & Angular Material      & Komponenty (karty, przyciski, snackbar) \\
+HTTP      & HttpClient + Interceptor & Żądania REST z nagłówkiem JWT \\
+WebSocket & STOMP.js + SockJS     & Subskrypcja live aktualizacji \\
+Backend   & Spring Boot 3.4.3     & REST API, WebSocket broker \\
+Security  & Spring Security + JWT & Autentykacja bezstanowa \\
+ORM       & Spring Data JPA       & Mapowanie obiektowo-relacyjne \\
+AOP       & Spring AOP            & Logowanie aspektowe \\
+Baza      & PostgreSQL 16         & Relacyjna baza danych \\
+Infra     & Docker + Compose      & Konteneryzacja wszystkich serwisów \\
+\bottomrule
+\end{tabularx}
+\caption{Stos technologiczny aplikacji}
+\end{table}
+
+% ============================================================
+\section{Diagramy UML}
+
+\subsection{Diagram klas -- model dziedziny}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=0.5cm]
+
+% --- User ---
+\node[classbox] (uhdr) {User};
+\node[classattr, below=0 of uhdr, minimum width=4cm] (uattr)
+  {\texttt{+id: Long}\\
+   \texttt{+username: String}\\
+   \texttt{+email: String}\\
+   \texttt{-password: String}\\
+   \texttt{+role: \{PATIENT,DOCTOR\}}};
+
+% --- Doctor ---
+\node[classbox, right=3cm of uhdr] (dhdr) {Doctor};
+\node[classattr, below=0 of dhdr, minimum width=4cm] (dattr)
+  {\texttt{+id: Long}\\
+   \texttt{+firstName: String}\\
+   \texttt{+lastName: String}\\
+   \texttt{+specialization: String}\\
+   \texttt{+phoneNumber: String}};
+
+% --- Patient ---
+\node[classbox, below=2.5cm of uhdr] (phdr) {Patient};
+\node[classattr, below=0 of phdr, minimum width=4cm] (pattr)
+  {\texttt{+id: Long}\\
+   \texttt{+firstName: String}\\
+   \texttt{+lastName: String}\\
+   \texttt{+dateOfBirth: LocalDate}};
+
+% --- TimeSlot ---
+\node[classbox, right=3cm of dhdr] (thdr) {TimeSlot};
+\node[classattr, below=0 of thdr, minimum width=4cm] (tattr)
+  {\texttt{+id: Long}\\
+   \texttt{+startTime: LocalDateTime}\\
+   \texttt{+endTime: LocalDateTime}\\
+   \texttt{+status: SlotStatus}};
+
+% --- Appointment ---
+\node[classbox, below=2.5cm of thdr] (ahdr) {Appointment};
+\node[classattr, below=0 of ahdr, minimum width=4cm] (aattr)
+  {\texttt{+id: Long}\\
+   \texttt{+notes: String}\\
+   \texttt{+status: AppointmentStatus}\\
+   \texttt{+createdAt: LocalDateTime}};
+
+% --- Relacje ---
+\draw[-Stealth] (uhdr.east) -- node[above, font=\tiny]{1\quad 0..1} (dhdr.west);
+\draw[-Stealth] (uhdr.south) -- node[right, font=\tiny]{1\quad 0..1} (phdr.north);
+\draw[-Stealth] (dhdr.east) -- node[above, font=\tiny]{1\quad *} (thdr.west);
+\draw[-Stealth] (thdr.south) -- node[right, font=\tiny]{1\quad 0..1} (ahdr.north);
+\draw[-Stealth] (phdr.east) -- node[above, font=\tiny]{1\quad *} (ahdr.west);
+
+\end{tikzpicture}
+\caption{Diagram klas modelu dziedziny (backend)}
+\end{figure}
+
+\subsection{Diagram sekwencji -- rezerwacja wizyty}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=2.4cm, y=-0.7cm, font=\footnotesize]
+
+% --- Nagłówki uczestników ---
+\foreach \x/\lbl in {0/Pacjent, 1/Angular, 2/Backend, 3/WebSocket, 4/PostgreSQL} {
+  \node[seqbox] at (\x, 0) {\lbl};
+  \draw[lifeline] (\x, 0.4) -- (\x, 10.5);
+}
+
+% --- Wiadomości ---
+\draw[msgarr] (0,1) -- node[above]{\textit{klik Zarezerwuj}} (1,1);
+\draw[msgarr] (1,1.8) -- node[above]{POST /slots/\{id\}/reserve} (2,1.8);
+\draw[msgarr] (2,2.6) -- node[above]{UPDATE BEING\_RESERVED} (4,2.6);
+\draw[retarr] (4,3.2) -- node[above]{ok} (2,3.2);
+\draw[msgarr] (2,4.0) -- node[above]{publish /topic/slots/\{id\}} (3,4.0);
+\draw[msgarr] (3,4.8) -- node[above]{slot update (BEING\_RESERVED)} (1,4.8);
+
+\draw[msgarr] (1,5.6) -- node[above]{POST /appointments} (2,5.6);
+\draw[msgarr] (2,6.4) -- node[above]{INSERT appointment} (4,6.4);
+\draw[msgarr] (2,7.2) -- node[above]{UPDATE BOOKED} (4,7.2);
+\draw[retarr] (4,7.8) -- node[above]{ok} (2,7.8);
+\draw[msgarr] (2,8.6) -- node[above]{publish /topic/slots/\{id\}} (3,8.6);
+\draw[msgarr] (3,9.4) -- node[above]{slot update (BOOKED)} (1,9.4);
+\draw[retarr] (2,10.2) -- node[above]{201 Created} (1,10.2);
+
+\end{tikzpicture}
+\caption{Diagram sekwencji -- rezerwacja wizyty z live aktualizacją WebSocket}
+\end{figure}
+
+\subsection{Diagram przypadków użycia}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1cm]
+
+% Aktorzy
+\node[align=center, font=\small] (pac) at (-4, -3) {
+  \begin{tikzpicture}
+    \draw[thick] (0,0.4) circle (0.25);
+    \draw[thick] (0,0.15) -- (0,-0.4);
+    \draw[thick] (-0.3,-0.05) -- (0.3,-0.05);
+    \draw[thick] (0,-0.4) -- (-0.2,-0.8);
+    \draw[thick] (0,-0.4) -- (0.2,-0.8);
+  \end{tikzpicture}\\Pacjent};
+
+\node[align=center, font=\small] (lek) at (4, -3) {
+  \begin{tikzpicture}
+    \draw[thick] (0,0.4) circle (0.25);
+    \draw[thick] (0,0.15) -- (0,-0.4);
+    \draw[thick] (-0.3,-0.05) -- (0.3,-0.05);
+    \draw[thick] (0,-0.4) -- (-0.2,-0.8);
+    \draw[thick] (0,-0.4) -- (0.2,-0.8);
+  \end{tikzpicture}\\Lekarz};
+
+% Granica systemu
+\draw[thick] (-2.5, 0.5) rectangle (2.5, -6.5);
+\node[font=\small\bfseries] at (0, 0.2) {DocBooking};
+
+% Use-case'y
+\node[usecase] (reg)  at (0, -0.8)  {Rejestracja};
+\node[usecase] (log)  at (0, -1.9)  {Logowanie};
+\node[usecase] (list) at (0, -3.0)  {Przeglądanie lekarzy};
+\node[usecase] (book) at (0, -4.1)  {Rezerwacja wizyty};
+\node[usecase] (canc) at (0, -5.2)  {Anulowanie wizyty};
+\node[usecase] (slot) at (0, -6.2)  {Dodawanie terminów};
+
+% Powiązania Pacjent
+\draw (pac) -- (reg);
+\draw (pac) -- (log);
+\draw (pac) -- (list);
+\draw (pac) -- (book);
+\draw (pac) -- (canc);
+
+% Powiązania Lekarz
+\draw (lek) -- (log);
+\draw (lek) -- (slot);
+
+\end{tikzpicture}
+\caption{Diagram przypadków użycia}
+\end{figure}
+
+% ============================================================
+\section{Opis kluczowych komponentów}
+
+\subsection{Warstwa bezpieczeństwa -- JWT}
+
+Autentykacja opiera się na tokenach JWT podpisanych kluczem HMAC-SHA256. Po zalogowaniu klient przechowuje token w \texttt{localStorage} i dołącza go do każdego żądania przez interceptor.
+
+\begin{lstlisting}[style=java, caption={Generowanie tokenu JWT -- JwtUtil.java}]
+public String generateToken(UserDetails userDetails) {
+    return Jwts.builder()
+            .subject(userDetails.getUsername())
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + expiration))
+            .signWith(getSigningKey())
+            .compact();
+}
+\end{lstlisting}
+
+\subsection{Programowanie aspektowe -- Spring AOP}
+
+Aspekt \texttt{LoggingAspect} automatycznie loguje każde wywołanie warstwy serwisowej bez modyfikacji kodu biznesowego.
+
+\begin{lstlisting}[style=java, caption={Aspekt logowania -- LoggingAspect.java}]
+@Aspect
+@Component
+public class LoggingAspect {
+
+    @Pointcut("execution(* com.zti.doctorreservation.service.*.*(..))")
+    public void serviceLayer() {}
+
+    @Around("serviceLayer()")
+    public Object logServiceExecution(ProceedingJoinPoint joinPoint)
+            throws Throwable {
+        String method = joinPoint.getSignature().toShortString();
+        long start = System.currentTimeMillis();
+        Object result = joinPoint.proceed();
+        long elapsed = System.currentTimeMillis() - start;
+        log.info("[{}] {} completed in {}ms",
+                getCurrentUser(), method, elapsed);
+        return result;
+    }
+
+    @After("execution(* com.zti.doctorreservation.service"
+         + ".AppointmentService.book(..))")
+    public void logAppointmentBooked(JoinPoint joinPoint) {
+        log.info("[AUDIT] Appointment booked by: {}", getCurrentUser());
+    }
+}
+\end{lstlisting}
+
+\subsection{Komunikacja WebSocket -- STOMP}
+
+\begin{lstlisting}[style=java, caption={Rozgłaszanie aktualizacji slotu -- TimeSlotService.java}]
+private void broadcastSlotUpdate(Long doctorId, TimeSlot slot) {
+    messagingTemplate.convertAndSend(
+        "/topic/slots/" + doctorId, slot);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=java, caption={Subskrypcja WebSocket -- websocket.ts (Angular)}]
+subscribeToSlots(doctorId: number): Observable<any> {
+    const subject = new Subject<any>();
+    this.client.subscribe(
+        `/topic/slots/${doctorId}`,
+        (msg: IMessage) => subject.next(JSON.parse(msg.body))
+    );
+    return subject.asObservable();
+}
+\end{lstlisting}
+
+% ============================================================
+\section{REST API}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{llXl}
+\toprule
+\textbf{Metoda} & \textbf{Ścieżka} & \textbf{Opis} & \textbf{Rola} \\
+\midrule
+POST & /api/auth/register               & Rejestracja             & Publiczny \\
+POST & /api/auth/login                  & Logowanie, zwraca JWT   & Publiczny \\
+GET  & /api/doctors                     & Lista lekarzy           & AUTH \\
+GET  & /api/doctors/\{id\}              & Dane lekarza            & AUTH \\
+GET  & /api/doctors/\{id\}/slots        & Dostępne terminy        & AUTH \\
+POST & /api/doctors/\{id\}/slots        & Dodaj termin            & DOCTOR \\
+POST & /api/appointments                & Zarezerwuj wizytę       & PATIENT \\
+GET  & /api/appointments/my             & Moje wizyty             & PATIENT \\
+PUT  & /api/appointments/\{id\}/cancel  & Anuluj wizytę           & PATIENT \\
+POST & /api/appointments/slots/\{id\}/reserve & Oznacz slot        & PATIENT \\
+\bottomrule
+\end{tabularx}
+\caption{Endpointy REST API}
+\end{table}
+
+% ============================================================
+\section{Testy}
+
+\subsection{Testy jednostkowe -- AuthService}
+
+\begin{lstlisting}[style=java, caption={Test rejestracji -- AuthServiceTest.java}]
+@ExtendWith(MockitoExtension.class)
+class AuthServiceTest {
+
+    @Mock UserRepository userRepository;
+    @Mock PatientRepository patientRepository;
+    @Mock PasswordEncoder passwordEncoder;
+    @Mock JwtUtil jwtUtil;
+    @Mock AuthenticationManager authenticationManager;
+    @Mock UserDetailsService userDetailsService;
+    @InjectMocks AuthService authService;
+
+    @Test
+    void register_ShouldCreatePatientAndReturnToken() {
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername("jan");
+        request.setEmail("jan@test.pl");
+        request.setPassword("haslo123");
+        request.setFirstName("Jan");
+        request.setLastName("Nowak");
+        request.setRole(User.Role.PATIENT);
+
+        when(userRepository.existsByUsername("jan")).thenReturn(false);
+        when(userRepository.existsByEmail("jan@test.pl")).thenReturn(false);
+        when(passwordEncoder.encode("haslo123")).thenReturn("$hashed$");
+        when(userRepository.save(any())).thenAnswer(i -> {
+            User u = i.getArgument(0); u.setId(1L); return u;
+        });
+        UserDetails ud = mock(UserDetails.class);
+        when(userDetailsService.loadUserByUsername("jan")).thenReturn(ud);
+        when(jwtUtil.generateToken(ud)).thenReturn("token-abc");
+
+        AuthResponse response = authService.register(request);
+
+        assertEquals("token-abc", response.getToken());
+        assertEquals("PATIENT", response.getRole());
+        verify(patientRepository).save(any(Patient.class));
+    }
+
+    @Test
+    void register_ShouldThrow_WhenUsernameExists() {
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername("jan");
+        when(userRepository.existsByUsername("jan")).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.register(request));
+    }
+}
+\end{lstlisting}
+
+\subsection{Test integracyjny -- kontroler REST}
+
+\begin{lstlisting}[style=java, caption={Test integracyjny -- AuthControllerTest.java}]
+@SpringBootTest(webEnvironment = RANDOM_PORT)
+@AutoConfigureMockMvc
+class AuthControllerTest {
+
+    @Autowired MockMvc mockMvc;
+    @Autowired ObjectMapper objectMapper;
+
+    @Test
+    void register_ShouldReturn200_AndToken() throws Exception {
+        RegisterRequest req = new RegisterRequest();
+        req.setUsername("user_" + System.currentTimeMillis());
+        req.setEmail("e_" + System.currentTimeMillis() + "@test.pl");
+        req.setPassword("haslo123");
+        req.setFirstName("Jan"); req.setLastName("Nowak");
+
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.role").value("PATIENT"));
+    }
+}
+\end{lstlisting}
+
+\subsection{Test frontendu -- Angular}
+
+\begin{lstlisting}[style=java, caption={Test serwisu autoryzacji -- auth.spec.ts}]
+describe('AuthService', () => {
+  let service: AuthService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [AuthService]
+    });
+    service = TestBed.inject(AuthService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  it('should store token after login', () => {
+    service.login('jan', 'haslo123').subscribe();
+    const req = httpMock.expectOne(
+        'http://localhost:8080/api/auth/login');
+    req.flush({ token: 'jwt-abc', username: 'jan', role: 'PATIENT' });
+
+    expect(localStorage.getItem('token')).toBe('jwt-abc');
+    expect(service.isLoggedIn()).toBeTrue();
+  });
+
+  afterEach(() => httpMock.verify());
+});
+\end{lstlisting}
+
+% ============================================================
+\section{Informacja uruchomieniowa}
+
+\subsection{Wymagania}
+
+\begin{itemize}
+  \item Docker Engine $\geq$ 24.0 i Docker Compose $\geq$ 2.0
+  \item Wolne porty: 4200 (frontend), 8080 (backend), 5432 (PostgreSQL)
+\end{itemize}
+
+\subsection{Uruchomienie przez Docker Compose}
+
+\begin{lstlisting}[style=bash]
+git clone https://github.com/REPO/Proj_ZTI.git
+cd Proj_ZTI
+docker compose up --build
+# Frontend:  http://localhost:4200
+# Backend:   http://localhost:8080
+\end{lstlisting}
+
+\begin{lstlisting}[style=bash]
+docker compose down       # zatrzymuje kontenery
+docker compose down -v    # zatrzymuje + usuwa wolumen bazy
+\end{lstlisting}
+
+\subsection{Zmienne środowiskowe}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Zmienna} & \textbf{Opis} & \textbf{Domyślna} \\
+\midrule
+\texttt{SPRING\_DATASOURCE\_URL}      & URL bazy PostgreSQL & jdbc:postgresql://postgres:5432/doctor\_reservation \\
+\texttt{SPRING\_DATASOURCE\_USERNAME} & Użytkownik bazy     & zti\_user \\
+\texttt{SPRING\_DATASOURCE\_PASSWORD} & Hasło bazy          & zti\_password \\
+\texttt{JWT\_SECRET}                  & Klucz podpisu JWT   & \textbf{zmień na produkcji!} \\
+\bottomrule
+\end{tabularx}
+\caption{Zmienne środowiskowe}
+\end{table}
+
+\subsection{Struktura projektu}
+
+\begin{lstlisting}[style=bash]
+Proj_ZTI/
+|-- docker-compose.yml
+|-- backend/
+|   |-- Dockerfile
+|   |-- pom.xml
+|   +-- src/main/java/com/zti/doctorreservation/
+|       |-- config/      # SecurityConfig, WebSocketConfig, DataInitializer
+|       |-- model/       # User, Doctor, Patient, TimeSlot, Appointment
+|       |-- repository/  # interfejsy Spring Data JPA
+|       |-- service/     # AuthService, AppointmentService, TimeSlotService
+|       |-- controller/  # AuthController, DoctorController, AppointmentController
+|       |-- security/    # JwtUtil, JwtAuthFilter, UserDetailsServiceImpl
+|       +-- aspect/      # LoggingAspect (Spring AOP)
++-- frontend/
+    |-- Dockerfile
+    |-- nginx.conf
+    +-- src/app/
+        |-- components/  # login, register, doctor-list, doctor-slots, my-appointments
+        |-- services/    # auth, doctor, appointment, websocket
+        |-- guards/      # authGuard
+        +-- interceptors/# authInterceptor
+\end{lstlisting}
+
+% ============================================================
+\section{Podręcznik użytkownika}
+
+\subsection{Rejestracja}
+
+\begin{enumerate}
+  \item Otwórz aplikację pod adresem \texttt{http://localhost:4200}.
+  \item Kliknij \textbf{Rejestracja} w pasku nawigacyjnym.
+  \item Wypełnij formularz: imię, nazwisko, nazwa użytkownika, email, hasło (min. 6 znaków).
+  \item Kliknij \textbf{Zarejestruj się} -- nastąpi automatyczne zalogowanie i przekierowanie do listy lekarzy.
+\end{enumerate}
+
+\subsection{Rezerwacja wizyty}
+
+\begin{enumerate}
+  \item Po zalogowaniu przejdź do \textbf{Lekarze} i wybierz lekarza.
+  \item Na widoku terminów zobaczysz dostępne sloty -- statusy aktualizują się w czasie rzeczywistym:
+    \begin{itemize}
+      \item \textbf{Dostępny} -- można zarezerwować,
+      \item \textbf{Rezerwowany\ldots} -- inny pacjent właśnie rezerwuje,
+      \item \textbf{Zajęty} -- niedostępny.
+    \end{itemize}
+  \item Kliknij \textbf{Zarezerwuj} -- wizyta zostanie zapisana i nastąpi przekierowanie do historii wizyt.
+\end{enumerate}
+
+\subsection{Anulowanie wizyty}
+
+\begin{enumerate}
+  \item Przejdź do \textbf{Moje wizyty}.
+  \item Przy zaplanowanej wizycie kliknij \textbf{Anuluj wizytę}.
+  \item Slot stanie się ponownie dostępny dla innych pacjentów.
+\end{enumerate}
+
+\subsection{Dane testowe}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Login} & \textbf{Hasło} & \textbf{Specjalizacja} \\
+\midrule
+dr.kowalski   & haslo123 & Kardiologia \\
+dr.nowak      & haslo123 & Pediatria \\
+dr.wisniewski & haslo123 & Ortopedia \\
+\bottomrule
+\end{tabular}
+\caption{Domyślne konta lekarzy (tworzone automatycznie)}
+\end{table}
+
+% ============================================================
+\section{JavaDoc -- przykłady}
+
+\begin{lstlisting}[style=java, caption={JavaDoc -- AppointmentService.java}]
+/**
+ * Serwis obsługujący logikę biznesową rezerwacji wizyt.
+ * Po każdej zmianie statusu slotu rozgłasza aktualizację
+ * przez WebSocket do wszystkich podłączonych klientów.
+ */
+@Service
+public class AppointmentService {
+
+    /**
+     * Rezerwuje wizytę dla zalogowanego pacjenta.
+     *
+     * @param request obiekt zawierający ID slotu i notatki
+     * @return zapisana wizyta
+     * @throws IllegalStateException gdy slot jest niedostępny
+     * @throws IllegalArgumentException gdy slot nie istnieje
+     */
+    public Appointment book(AppointmentRequest request) { ... }
+
+    /**
+     * Anuluje wizytę i zwalnia slot czasowy.
+     *
+     * @param appointmentId ID wizyty do anulowania
+     * @return wizyta ze statusem CANCELLED
+     */
+    public Appointment cancel(Long appointmentId) { ... }
+}
+\end{lstlisting}
+
+\end{document}

@@ -1,0 +1,45 @@
+<h2>Panel lekarza -- Dr {{ doctor?.firstName }} {{ doctor?.lastName }} ({{ doctor?.specialization }})</h2>
+
+<div class="layout">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Dodaj termin</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="addSlot()">
+        <mat-form-field appearance="outline">
+          <mat-label>Data i godzina rozpoczęcia</mat-label>
+          <input matInput type="datetime-local" formControlName="startTime" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Data i godzina zakończenia</mat-label>
+          <input matInput type="datetime-local" formControlName="endTime" />
+        </mat-form-field>
+        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">
+          Dodaj termin
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Moje terminy ({{ slots.length }})</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="slots-list">
+        @for (slot of slots; track slot.id) {
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border:1px solid #eee; border-radius:4px;">
+            <span>{{ slot.startTime | date:'dd.MM.yyyy HH:mm' }} – {{ slot.endTime | date:'HH:mm' }}</span>
+            <mat-chip [color]="getStatusColor(slot.status)" highlighted>
+              {{ getStatusLabel(slot.status) }}
+            </mat-chip>
+          </div>
+        }
+        @empty {
+          <p>Brak terminów. Dodaj pierwszy termin.</p>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

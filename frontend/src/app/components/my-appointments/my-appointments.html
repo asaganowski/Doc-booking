@@ -1,0 +1,26 @@
+<h2>Moje wizyty</h2>
+<div class="grid">
+  @for (appt of appointments; track appt.id) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Dr {{ appt.doctor?.firstName }} {{ appt.doctor?.lastName }}</mat-card-title>
+        <mat-card-subtitle>{{ appt.doctor?.specialization }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p><strong>Data:</strong> {{ appt.timeSlot?.startTime | date:'dd.MM.yyyy HH:mm' }}</p>
+        <p><strong>Notatki:</strong> {{ appt.notes || 'Brak' }}</p>
+        <mat-chip [color]="getStatusColor(appt.status)" highlighted>
+          {{ getStatusLabel(appt.status) }}
+        </mat-chip>
+      </mat-card-content>
+      @if (appt.status === 'SCHEDULED') {
+        <mat-card-actions>
+          <button mat-button color="warn" (click)="cancel(appt.id)">Anuluj wizytę</button>
+        </mat-card-actions>
+      }
+    </mat-card>
+  }
+  @empty {
+    <p>Nie masz żadnych wizyt.</p>
+  }
+</div>

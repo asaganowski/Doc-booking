@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: doctor-reservation-db
+    environment:
+      POSTGRES_DB: doctor_reservation
+      POSTGRES_USER: zti_user
+      POSTGRES_PASSWORD: zti_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zti_user -d doctor_reservation"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: doctor-reservation-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/doctor_reservation
+      SPRING_DATASOURCE_USERNAME: zti_user
+      SPRING_DATASOURCE_PASSWORD: zti_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: your-secret-key-change-in-production-must-be-at-least-256-bits
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: doctor-reservation-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
