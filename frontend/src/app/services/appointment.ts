@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiUrl } from '../env';
 
 export interface Appointment {
   id: number;
@@ -14,7 +15,7 @@ export interface Appointment {
 
 @Injectable({ providedIn: 'root' })
 export class AppointmentService {
-  private readonly API = 'http://localhost:8080/api/appointments';
+  private get API() { return `${getApiUrl()}/api/appointments`; }
 
   constructor(private http: HttpClient) {}
 

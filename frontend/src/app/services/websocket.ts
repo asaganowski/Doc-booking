@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { Subject, Observable } from 'rxjs';
+import { getApiUrl } from '../env';
 
 @Injectable({ providedIn: 'root' })
 export class WebsocketService {
@@ -11,7 +12,7 @@ export class WebsocketService {
   connect(): void {
     if (this.connected) return;
     this.client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      webSocketFactory: () => new SockJS(`${getApiUrl()}/ws`),
       reconnectDelay: 5000,
     });
     this.client.activate();

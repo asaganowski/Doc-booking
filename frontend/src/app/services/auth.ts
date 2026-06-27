@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
+import { getApiUrl } from '../env';
 
 export interface AuthResponse {
   token: string;
@@ -12,7 +13,8 @@ export interface AuthResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly API = 'http://localhost:8080/api/auth';
+  private get API() { return `${getApiUrl()}/api/auth`; }
+
   isLoggedIn = signal(this.hasToken());
   currentRole = signal(this.getRole());
   currentUsername = signal(this.getUsername());
@@ -65,11 +67,6 @@ export class AuthService {
     }
   }
 
-  private getRole(): string | null {
-    return localStorage.getItem('role');
-  }
-
-  private getUsername(): string | null {
-    return localStorage.getItem('username');
-  }
+  private getRole(): string | null { return localStorage.getItem('role'); }
+  private getUsername(): string | null { return localStorage.getItem('username'); }
 }

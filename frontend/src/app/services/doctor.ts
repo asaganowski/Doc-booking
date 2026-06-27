@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiUrl } from '../env';
 
 export interface Doctor {
   id: number;
@@ -20,7 +21,7 @@ export interface TimeSlot {
 
 @Injectable({ providedIn: 'root' })
 export class DoctorService {
-  private readonly API = 'http://localhost:8080/api/doctors';
+  private get API() { return `${getApiUrl()}/api/doctors`; }
 
   constructor(private http: HttpClient) {}
 
