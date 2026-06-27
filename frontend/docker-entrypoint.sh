@@ -1,4 +1,5 @@
 #!/bin/sh
+mkdir -p /usr/share/nginx/html/assets
 # Inject API URL
 cat > /usr/share/nginx/html/assets/env.js << ENVEOF
 (function(window) {
