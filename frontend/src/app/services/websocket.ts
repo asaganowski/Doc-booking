@@ -2,17 +2,19 @@ import { Injectable } from '@angular/core';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { Subject, Observable } from 'rxjs';
-import { getApiUrl } from '../env';
+import { ConfigService } from '../config.service';
 
 @Injectable({ providedIn: 'root' })
 export class WebsocketService {
   private client!: Client;
   private connected = false;
 
+  constructor(private config: ConfigService) {}
+
   connect(): void {
     if (this.connected) return;
     this.client = new Client({
-      webSocketFactory: () => new SockJS(`${getApiUrl()}/ws`),
+      webSocketFactory: () => new SockJS(`${this.config.apiUrl}/ws`),
       reconnectDelay: 5000,
     });
     this.client.activate();

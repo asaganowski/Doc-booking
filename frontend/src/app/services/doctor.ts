@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { getApiUrl } from '../env';
+import { ConfigService } from '../config.service';
 
 export interface Doctor {
   id: number;
@@ -21,9 +21,9 @@ export interface TimeSlot {
 
 @Injectable({ providedIn: 'root' })
 export class DoctorService {
-  private get API() { return `${getApiUrl()}/api/doctors`; }
+  private get API() { return `${this.config.apiUrl}/api/doctors`; }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private config: ConfigService) {}
 
   getAll(): Observable<Doctor[]> {
     return this.http.get<Doctor[]>(this.API);

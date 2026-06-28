@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { getApiUrl } from '../env';
+import { ConfigService } from '../config.service';
 
 export interface Appointment {
   id: number;
@@ -15,9 +15,9 @@ export interface Appointment {
 
 @Injectable({ providedIn: 'root' })
 export class AppointmentService {
-  private get API() { return `${getApiUrl()}/api/appointments`; }
+  private get API() { return `${this.config.apiUrl}/api/appointments`; }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private config: ConfigService) {}
 
   book(timeSlotId: number, notes: string): Observable<Appointment> {
     return this.http.post<Appointment>(this.API, { timeSlotId, notes });

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
-import { getApiUrl } from '../env';
+import { ConfigService } from '../config.service';
 
 export interface AuthResponse {
   token: string;
@@ -13,13 +13,13 @@ export interface AuthResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private get API() { return `${getApiUrl()}/api/auth`; }
+  private get API() { return `${this.config.apiUrl}/api/auth`; }
 
   isLoggedIn = signal(this.hasToken());
   currentRole = signal(this.getRole());
   currentUsername = signal(this.getUsername());
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router, private config: ConfigService) {}
 
   login(username: string, password: string) {
     return this.http.post<AuthResponse>(`${this.API}/login`, { username, password }).pipe(
