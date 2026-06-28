@@ -9,8 +9,8 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
 import { DoctorService, TimeSlot, Doctor } from '../../services/doctor';
-import { AuthService } from '../../services/auth';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-doctor-panel',
@@ -26,6 +26,7 @@ import { HttpClient } from '@angular/common/http';
            .slots-list { display:flex; flex-direction:column; gap:8px; max-height:500px; overflow-y:auto; }`
 })
 export class DoctorPanelComponent implements OnInit {
+  private baseUrl = `${environment.apiUrl}/api`;
   form;
   slots: TimeSlot[] = [];
   doctor?: Doctor;
@@ -34,7 +35,6 @@ export class DoctorPanelComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private doctorService: DoctorService,
-    private auth: AuthService,
     private http: HttpClient,
     private snackBar: MatSnackBar
   ) {
@@ -45,7 +45,7 @@ export class DoctorPanelComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.http.get<any>('http://localhost:8080/api/doctors/me').subscribe({
+    this.http.get<any>(`${this.baseUrl}/doctors/me`).subscribe({
       next: (doctor) => {
         this.doctor = doctor;
         this.doctorId = doctor.id;
@@ -57,7 +57,7 @@ export class DoctorPanelComponent implements OnInit {
 
   loadSlots() {
     if (!this.doctorId) return;
-    this.http.get<TimeSlot[]>(`http://localhost:8080/api/doctors/${this.doctorId}/slots/all`).subscribe(
+    this.http.get<TimeSlot[]>(`${this.baseUrl}/doctors/${this.doctorId}/slots/all`).subscribe(
       s => this.slots = s.sort((a, b) => a.startTime.localeCompare(b.startTime))
     );
   }

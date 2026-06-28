@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
-import { ConfigService } from '../config.service';
+import { environment } from '../../environments/environment';
 
 export interface AuthResponse {
   token: string;
@@ -13,22 +13,22 @@ export interface AuthResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private get API() { return `${this.config.apiUrl}/api/auth`; }
+  private baseUrl = `${environment.apiUrl}/api`;
 
   isLoggedIn = signal(this.hasToken());
   currentRole = signal(this.getRole());
   currentUsername = signal(this.getUsername());
 
-  constructor(private http: HttpClient, private router: Router, private config: ConfigService) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   login(username: string, password: string) {
-    return this.http.post<AuthResponse>(`${this.API}/login`, { username, password }).pipe(
+    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, { username, password }).pipe(
       tap(res => this.saveSession(res))
     );
   }
 
   register(data: any) {
-    return this.http.post<AuthResponse>(`${this.API}/register`, data).pipe(
+    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/register`, data).pipe(
       tap(res => this.saveSession(res))
     );
   }

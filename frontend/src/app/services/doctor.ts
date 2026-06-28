@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ConfigService } from '../config.service';
+import { environment } from '../../environments/environment';
 
 export interface Doctor {
   id: number;
@@ -21,23 +21,23 @@ export interface TimeSlot {
 
 @Injectable({ providedIn: 'root' })
 export class DoctorService {
-  private get API() { return `${this.config.apiUrl}/api/doctors`; }
+  private baseUrl = `${environment.apiUrl}/api/doctors`;
 
-  constructor(private http: HttpClient, private config: ConfigService) {}
+  constructor(private http: HttpClient) {}
 
   getAll(): Observable<Doctor[]> {
-    return this.http.get<Doctor[]>(this.API);
+    return this.http.get<Doctor[]>(this.baseUrl);
   }
 
   getById(id: number): Observable<Doctor> {
-    return this.http.get<Doctor>(`${this.API}/${id}`);
+    return this.http.get<Doctor>(`${this.baseUrl}/${id}`);
   }
 
   getAvailableSlots(doctorId: number): Observable<TimeSlot[]> {
-    return this.http.get<TimeSlot[]>(`${this.API}/${doctorId}/slots`);
+    return this.http.get<TimeSlot[]>(`${this.baseUrl}/${doctorId}/slots`);
   }
 
   addSlot(doctorId: number, slot: { startTime: string; endTime: string }): Observable<TimeSlot> {
-    return this.http.post<TimeSlot>(`${this.API}/${doctorId}/slots`, slot);
+    return this.http.post<TimeSlot>(`${this.baseUrl}/${doctorId}/slots`, slot);
   }
 }
