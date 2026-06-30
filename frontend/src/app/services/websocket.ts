@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Client, IMessage } from '@stomp/stompjs';
+import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { Subject, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -20,18 +20,27 @@ export class WebsocketService {
   }
 
   subscribeToSlots(doctorId: number): Observable<any> {
-    const subject = new Subject<any>();
-    const checkAndSubscribe = () => {
-      if (this.client?.connected) {
-        this.client.subscribe(`/topic/slots/${doctorId}`, (msg: IMessage) => {
-          subject.next(JSON.parse(msg.body));
-        });
-      } else {
-        setTimeout(checkAndSubscribe, 500);
-      }
-    };
-    checkAndSubscribe();
-    return subject.asObservable();
+    return new Observable(observer => {
+      let stompSub: StompSubscription | undefined;
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+      const checkAndSubscribe = () => {
+        if (this.client?.connected) {
+          stompSub = this.client.subscribe(`/topic/slots/${doctorId}`, (msg: IMessage) => {
+            observer.next(JSON.parse(msg.body));
+          });
+        } else {
+          timeoutId = setTimeout(checkAndSubscribe, 500);
+        }
+      };
+
+      checkAndSubscribe();
+
+      return () => {
+        clearTimeout(timeoutId);
+        stompSub?.unsubscribe();
+      };
+    });
   }
 
   disconnect(): void {
